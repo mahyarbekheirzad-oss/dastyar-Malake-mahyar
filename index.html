@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f172a">
+<link rel="manifest" href="manifest.json">
+<title>دستیار املاک مهیار</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Tahoma,sans-serif;background:#f4f6f8;color:#17202a}
+header{background:#0f172a;color:#fff;padding:18px 16px;position:sticky;top:0;z-index:5}
+h1{font-size:20px;margin:0 0 5px}.sub{opacity:.75;font-size:12px}
+nav{display:flex;gap:6px;overflow:auto;padding:8px;background:#fff;border-bottom:1px solid #ddd;position:sticky;top:75px;z-index:4}
+nav button{border:0;background:#eef2f7;padding:9px 12px;border-radius:10px;white-space:nowrap}
+nav button.active{background:#0f172a;color:#fff}
+main{max-width:900px;margin:auto;padding:14px}.page{display:none}.page.active{display:block}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.card{background:#fff;border-radius:16px;padding:14px;box-shadow:0 2px 10px #0000000b;margin-bottom:12px}
+.stat b{font-size:24px;display:block;margin-top:5px}.muted{color:#697586;font-size:12px}
+label{display:block;font-size:13px;margin:10px 0 5px}input,select,textarea{width:100%;padding:11px;border:1px solid #d6dbe1;border-radius:10px;font-size:15px;background:#fff}textarea{min-height:80px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+button.primary,button.danger,button.secondary{border:0;border-radius:10px;padding:10px 13px;font-size:14px}
+button.primary{background:#0f172a;color:#fff}button.secondary{background:#e9eef5}button.danger{background:#fee2e2;color:#991b1b}
+.item{border:1px solid #e1e5ea;border-radius:12px;padding:12px;margin:8px 0;background:#fff}
+.badge{display:inline-block;padding:4px 8px;border-radius:20px;background:#eef2f7;font-size:11px}.urgent{background:#fff1f2;color:#be123c}.ok{background:#ecfdf5;color:#047857}
+.empty{padding:18px;text-align:center;color:#7b8794}
+.small{font-size:12px;line-height:1.8}.checkrow{display:flex;gap:8px;align-items:center;margin:7px 0}.checkrow input{width:auto}
+@media(min-width:700px){.grid{grid-template-columns:repeat(4,1fr)}}
+</style>
+</head>
+<body>
+<header><h1>دستیار املاک مهیار</h1><div class="sub">پیگیری مشتری، فایل، معامله و سررسید قرارداد</div></header>
+<nav id="nav">
+<button data-page="home" class="active">خانه</button><button data-page="follow">پیگیری</button>
+<button data-page="customer">مشتری</button><button data-page="property">فایل</button>
+<button data-page="deal">معامله</button><button data-page="settings">یادآورها</button>
+</nav>
+<main>
+<section id="home" class="page active">
+<div class="grid">
+<div class="card stat">پیگیری امروز<b id="sToday">0</b></div><div class="card stat">عقب‌افتاده<b id="sOverdue">0</b></div>
+<div class="card stat">معامله باز<b id="sDeals">0</b></div><div class="card stat">قرارداد نزدیک<b id="sContracts">0</b></div>
+</div>
+<div class="card"><h3>کارهای فوری</h3><div id="urgent"></div></div><div class="card" id="migrationNotice" style="display:none"><b>اطلاعات نسخه قبلی منتقل شد ✅</b><p class="small">مشتری‌ها، پیگیری‌ها، فایل‌ها و معاملات نسخه ۲ به این نسخه منتقل شده‌اند. برای قراردادهای اجاره، تاریخ پایان و یادآورها را تکمیل کن.</p></div>
+<div class="card"><h3>سررسید قراردادها</h3><div id="contracts"></div></div>
+<div class="card"><h3>مرور شبانه</h3><p class="small">هر شب این موارد را مرور کن: تماس‌های بی‌پاسخ، پیگیری‌های امروز، فایل‌های بدون آپدیت، معاملات باز و قراردادهایی که نزدیک سررسید هستند.</p>
+<button class="primary" onclick="nightReview()">مرور شبانه</button></div>
+</section>
+
+<section id="follow" class="page">
+<div class="card"><h3>افزودن پیگیری</h3>
+<div class="row"><div><label>عنوان</label><input id="fTitle" placeholder="مثلاً تماس با خریدار"></div><div><label>تاریخ</label><input id="fDate" type="date"></div></div>
+<div class="row"><div><label>شماره تماس</label><input id="fPhone" inputmode="tel"></div><div><label>دلیل</label><input id="fReason" placeholder="فایل، خرید، فروش..."></div></div>
+<label>یادداشت</label><textarea id="fNote"></textarea>
+<div class="actions"><button class="primary" onclick="addFollow()">ثبت پیگیری</button></div></div>
+<div class="card"><h3>لیست پیگیری‌ها</h3><div id="followList"></div></div>
+</section>
+
+<section id="customer" class="page">
+<div class="card"><h3>افزودن مشتری</h3><div class="row"><div><label>نام</label><input id="cName"></div><div><label>تلفن</label><input id="cPhone" inputmode="tel"></div></div>
+<div class="row"><div><label>نوع نیاز</label><select id="cNeed"><option>خرید</option><option>فروش</option><option>اجاره</option><option>تهاتر</option><option>مشارکت</option></select></div><div><label>بودجه</label><input id="cBudget"></div></div>
+<label>یادداشت</label><textarea id="cNote"></textarea><button class="primary" onclick="addCustomer()">ثبت مشتری</button></div>
+<div class="card"><h3>مشتری‌ها</h3><div id="customerList"></div></div>
+</section>
+
+<section id="property" class="page">
+<div class="card"><h3>افزودن فایل</h3><div class="row"><div><label>عنوان فایل</label><input id="pTitle" placeholder="آپارتمان الهیه"></div><div><label>نوع</label><select id="pType"><option>فروش</option><option>اجاره</option><option>مشارکت</option><option>تهاتر</option></select></div></div>
+<div class="row"><div><label>منطقه</label><input id="pArea"></div><div><label>متراژ</label><input id="pSize" inputmode="decimal"></div></div>
+<div class="row"><div><label>قیمت / ودیعه</label><input id="pPrice"></div><div><label>شماره مالک</label><input id="pPhone" inputmode="tel"></div></div>
+<label>یادداشت</label><textarea id="pNote"></textarea><button class="primary" onclick="addProperty()">ثبت فایل</button></div>
+<div class="card"><h3>فایل‌ها</h3><div id="propertyList"></div></div>
+</section>
+
+<section id="deal" class="page">
+<div class="card"><h3>ثبت معامله / قرارداد</h3>
+<div class="row"><div><label>عنوان</label><input id="dTitle" placeholder="قرارداد اجاره واحد 12"></div><div><label>نوع معامله</label><select id="dType"><option>اجاره</option><option>خرید و فروش</option><option>تهاتر</option><option>مشارکت</option></select></div></div>
+<div class="row"><div><label>نام مشتری</label><input id="dCustomer"></div><div><label>تلفن</label><input id="dPhone" inputmode="tel"></div></div>
+<div class="row"><div><label>شروع قرارداد</label><input id="dStart" type="date"></div><div><label>پایان قرارداد</label><input id="dEnd" type="date"></div></div>
+<div class="row"><div><label>مبلغ / ارزش</label><input id="dAmount"></div><div><label>مرحله</label><select id="dStage"><option>مذاکره</option><option>بازدید</option><option>پیشنهاد</option><option>قرارداد</option><option>تسویه</option><option>بسته‌شده</option></select></div></div>
+<label>یادداشت</label><textarea id="dNote"></textarea>
+<div><b class="small">یادآوری سررسید:</b></div>
+<div class="checkrow"><input id="r60" type="checkbox" checked><label for="r60">۶۰ روز قبل</label></div>
+<div class="checkrow"><input id="r30" type="checkbox" checked><label for="r30">۳۰ روز قبل</label></div>
+<div class="checkrow"><input id="r7" type="checkbox" checked><label for="r7">۷ روز قبل</label></div>
+<div class="checkrow"><input id="rAnnual" type="checkbox" checked><label for="rAnnual">یادآوری سالانه</label></div>
+<div class="actions"><button class="primary" onclick="addDeal()">ثبت معامله و ساخت یادآورها</button></div>
+</div>
+<div class="card"><h3>معاملات</h3><div id="dealList"></div></div>
+</section>
+
+<section id="settings" class="page">
+<div class="card"><h3>یادآورها و اعلان‌ها</h3>
+<p class="small">این نسخه اطلاعات را روی همین گوشی نگه می‌دارد و برای کار بدون اینترنت طراحی شده است. برای اعلان پوش واقعی در آیفون، نسخه آنلاین باید به سرور Web Push متصل شود.</p>
+<div class="actions"><button class="primary" onclick="requestNotif()">فعال‌سازی اعلان‌های گوشی</button><button class="secondary" onclick="exportICS()">خروجی تقویم (.ics)</button><button class="secondary" onclick="backup()">پشتیبان‌گیری</button><label class="secondary" style="display:inline-block;cursor:pointer">بازیابی <input id="restore" type="file" accept=".json" style="display:none" onchange="restore(event)"></label></div>
+<p id="notifStatus" class="small"></p></div>
+<div class="card"><h3>منطق یادآوری قرارداد</h3><ul class="small"><li>برای اجاره/قرارداد، تاریخ شروع و پایان را ثبت کن.</li><li>۶۰، ۳۰ و ۷ روز قبل می‌توانی یادآوری داشته باشی.</li><li>یادآوری سالانه برای پیگیری مجدد مشتری/مالک قابل ثبت است.</li><li>خروجی تقویم را می‌توانی در تقویم آیفون وارد کنی تا اعلان‌های محلی حتی بدون اینترنت هم در دسترس باشند.</li></ul></div>
+</section>
+</main>
+<script>
+const KEY="mahyar_v3";
+function loadDB(){
+  const current=localStorage.getItem(KEY);
+  if(current) return JSON.parse(current);
+  const old=localStorage.getItem("mahyar_v2");
+  if(old){
+    try{
+      const o=JSON.parse(old);
+      const migrated={
+        follow:(o.followups||[]).map(x=>({id:x.id,title:x.title||"پیگیری",date:x.date||today(),phone:x.phone||"",reason:x.type||"",note:x.note||"",done:!!x.done})),
+        customers:(o.customers||[]).map(x=>({id:x.id,name:x.name||"",phone:x.phone||"",need:x.need||"خرید",budget:x.budget||"",note:x.note||""})),
+        properties:(o.files||[]).map(x=>({id:x.id,title:x.title||"",type:x.type||"فروش",area:x.area||"",size:x.size||"",price:x.price||"",phone:x.phone||"",note:x.note||""})),
+        deals:(o.deals||[]).map(x=>({id:x.id,title:x.title||"",type:"خرید و فروش",customer:x.party||"",phone:"",start:"",end:"",amount:x.value||"",stage:x.status==="بسته شد"?"بسته‌شده":(x.status||"مذاکره"),note:x.note||"",reminders:[]}))
+      };
+      localStorage.setItem(KEY,JSON.stringify(migrated));
+      return migrated;
+    }catch(e){}
+  }
+  return {follow:[],customers:[],properties:[],deals:[]};
+}
+let db=loadDB(); const migratedFromV2=!!localStorage.getItem("mahyar_v2") && !localStorage.getItem("mahyar_v3_migration_seen"); if(migratedFromV2){localStorage.setItem("mahyar_v3_migration_seen","1");}
+const $=id=>document.getElementById(id);
+const today=()=>new Date().toISOString().slice(0,10);
+function save(){localStorage.setItem(KEY,JSON.stringify(db));render()}
+function esc(s){return String(s||"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
+function daysUntil(d){return Math.ceil((new Date(d+"T23:59:59")-new Date())/86400000)}
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{document.querySelectorAll("nav button").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));$(b.dataset.page).classList.add("active");render()});
+function addFollow(){if(!$("fTitle").value||!$("fDate").value)return alert("عنوان و تاریخ را وارد کن");db.follow.push({id:Date.now(),title:$("fTitle").value,date:$("fDate").value,phone:$("fPhone").value,reason:$("fReason").value,note:$("fNote").value,done:false});["fTitle","fDate","fPhone","fReason","fNote"].forEach(x=>$(x).value="");save()}
+function addCustomer(){if(!$("cName").value)return alert("نام مشتری را وارد کن");db.customers.push({id:Date.now(),name:$("cName").value,phone:$("cPhone").value,need:$("cNeed").value,budget:$("cBudget").value,note:$("cNote").value});["cName","cPhone","cBudget","cNote"].forEach(x=>$(x).value="");save()}
+function addProperty(){if(!$("pTitle").value)return alert("عنوان فایل را وارد کن");db.properties.push({id:Date.now(),title:$("pTitle").value,type:$("pType").value,area:$("pArea").value,size:$("pSize").value,price:$("pPrice").value,phone:$("pPhone").value,note:$("pNote").value});["pTitle","pArea","pSize","pPrice","pPhone","pNote"].forEach(x=>$(x).value="");save()}
+function addDeal(){
+ if(!$("dTitle").value||!$("dEnd").value)return alert("عنوان و تاریخ پایان قرارداد را وارد کن");
+ const reminders=[]; const end=new Date($("dEnd").value+"T12:00:00");
+ [[60,"r60"],[30,"r30"],[7,"r7"]].forEach(([n,id])=>{if($(id).checked){let d=new Date(end);d.setDate(d.getDate()-n);reminders.push({date:d.toISOString().slice(0,10),label:n+" روز قبل",done:false})}});
+ if($("rAnnual").checked){let d=new Date(end);d.setFullYear(d.getFullYear()+1);reminders.push({date:d.toISOString().slice(0,10),label:"یادآوری سالانه",done:false})}
+ db.deals.push({id:Date.now(),title:$("dTitle").value,type:$("dType").value,customer:$("dCustomer").value,phone:$("dPhone").value,start:$("dStart").value,end:$("dEnd").value,amount:$("dAmount").value,stage:$("dStage").value,note:$("dNote").value,reminders});
+ ["dTitle","dCustomer","dPhone","dStart","dEnd","dAmount","dNote"].forEach(x=>$(x).value="");save();
+}
+function del(type,id){if(confirm("حذف شود؟")){db[type]=db[type].filter(x=>x.id!==id);save()}}
+function doneFollow(id){let x=db.follow.find(x=>x.id===id);if(x)x.done=!x.done;save()}
+function render(){
+ const t=today(), overdue=db.follow.filter(x=>!x.done&&x.date<t).length, td=db.follow.filter(x=>!x.done&&x.date===t).length;
+ const contracts=db.deals.filter(d=>d.end&&daysUntil(d.end)<=60&&daysUntil(d.end)>=0).length;
+ $("sToday").textContent=td;$("sOverdue").textContent=overdue;$("sDeals").textContent=db.deals.filter(d=>d.stage!=="بسته‌شده").length;$("sContracts").textContent=contracts;
+ $("urgent").innerHTML=[...db.follow.filter(x=>!x.done&&x.date<=t).map(x=>`<div class="item"><b>${esc(x.title)}</b> <span class="badge urgent">${x.date<t?"عقب‌افتاده":"امروز"}</span><div class="small">${esc(x.reason)} ${x.phone?`· <a href="tel:${esc(x.phone)}">تماس</a>`:""}</div><button class="secondary" onclick="doneFollow(${x.id})">انجام شد</button></div>`),
+ ...db.deals.flatMap(d=>d.reminders.filter(r=>!r.done&&r.date<=t).map(r=>`<div class="item"><b>${esc(d.title)}</b> <span class="badge urgent">${esc(r.label)}</span><div class="small">${r.date} · ${esc(d.customer)}</div></div>`))].join("")||'<div class="empty">مورد فوری نداری.</div>';
+ $("contracts").innerHTML=db.deals.filter(d=>d.end).sort((a,b)=>a.end.localeCompare(b.end)).slice(0,10).map(d=>`<div class="item"><b>${esc(d.title)}</b><div class="small">پایان: ${d.end} · ${esc(d.type)} · ${daysUntil(d.end)>=0?daysUntil(d.end)+" روز مانده":"گذشته"}</div></div>`).join("")||'<div class="empty">قراردادی ثبت نشده.</div>';
+ $("followList").innerHTML=db.follow.sort((a,b)=>a.date.localeCompare(b.date)).map(x=>`<div class="item"><b>${esc(x.title)}</b> <span class="badge">${x.date}</span><div class="small">${esc(x.reason)} ${x.phone?`· <a href="tel:${esc(x.phone)}">تماس</a>`:""}<br>${esc(x.note)}</div><button class="secondary" onclick="doneFollow(${x.id})">${x.done?"بازکردن":"انجام شد"}</button> <button class="danger" onclick="del('follow',${x.id})">حذف</button></div>`).join("")||'<div class="empty">پیگیری‌ای ثبت نشده.</div>';
+ $("customerList").innerHTML=db.customers.map(x=>`<div class="item"><b>${esc(x.name)}</b> <span class="badge">${esc(x.need)}</span><div class="small">${x.phone?`<a href="tel:${esc(x.phone)}">${esc(x.phone)}</a>`:""} · بودجه: ${esc(x.budget)}<br>${esc(x.note)}</div><button class="danger" onclick="del('customers',${x.id})">حذف</button></div>`).join("")||'<div class="empty">مشتری‌ای ثبت نشده.</div>';
+ $("propertyList").innerHTML=db.properties.map(x=>`<div class="item"><b>${esc(x.title)}</b> <span class="badge">${esc(x.type)}</span><div class="small">${esc(x.area)} · ${esc(x.size)} متر · ${esc(x.price)} ${x.phone?`· <a href="tel:${esc(x.phone)}">تماس مالک</a>`:""}<br>${esc(x.note)}</div><button class="danger" onclick="del('properties',${x.id})">حذف</button></div>`).join("")||'<div class="empty">فایلی ثبت نشده.</div>';
+ $("dealList").innerHTML=db.deals.map(d=>`<div class="item"><b>${esc(d.title)}</b> <span class="badge">${esc(d.type)}</span> <span class="badge">${esc(d.stage)}</span><div class="small">مشتری: ${esc(d.customer)} ${d.phone?`· <a href="tel:${esc(d.phone)}">تماس</a>`:""}<br>شروع: ${d.start||"-"} · پایان: ${d.end||"-"} · مبلغ: ${esc(d.amount)}<br>یادآورها: ${d.reminders.map(r=>r.date+" ("+r.label+")").join("، ")}</div><button class="danger" onclick="del('deals',${d.id})">حذف</button></div>`).join("")||'<div class="empty">معامله‌ای ثبت نشده.</div>';
+}
+function requestNotif(){
+ if(!("Notification"in window))return $("notifStatus").textContent="این دستگاه/مرورگر اعلان وب را پشتیبانی نمی‌کند.";
+ Notification.requestPermission().then(x=>$("notifStatus").textContent="وضعیت اعلان: "+x);
+}
+function nightReview(){alert("مرور شبانه: پیگیری‌های عقب‌افتاده، تماس‌های بی‌پاسخ، معاملات باز و قراردادهای نزدیک سررسید را بررسی کن.")}
+function backup(){const blob=new Blob([JSON.stringify(db,null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="mahyar-backup-"+today()+".json";a.click()}
+function restore(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{db=JSON.parse(r.result);save();alert("بازیابی شد")}catch{alert("فایل پشتیبان معتبر نیست")}};r.readAsText(f)}
+function icsDate(s){return s.replaceAll("-","")+"T090000"}
+function exportICS(){
+ let events=[];
+ db.deals.forEach(d=>{if(d.end)events.push(`BEGIN:VEVENT\nUID:${d.id}@mahyar\nDTSTART:${icsDate(d.end)}\nDTEND:${icsDate(d.end)}\nSUMMARY:سررسید قرارداد - ${d.title}\nDESCRIPTION:${d.customer||""} ${d.phone||""}\nEND:VEVENT`);
+ d.reminders.forEach((r,i)=>events.push(`BEGIN:VEVENT\nUID:${d.id}-${i}@mahyar\nDTSTART:${icsDate(r.date)}\nDTEND:${icsDate(r.date)}\nSUMMARY:یادآوری ${r.label} - ${d.title}\nDESCRIPTION:${d.customer||""} ${d.phone||""}\nEND:VEVENT`))});
+ if(!events.length)return alert("برای خروجی تقویم، اول یک معامله با تاریخ پایان ثبت کن.");
+ const ics="BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//Mahyar Real Estate//FA\n"+events.join("\n")+"\nEND:VCALENDAR";
+ const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([ics],{type:"text/calendar;charset=utf-8"}));a.download="mahyar-calendar.ics";a.click();
+}
+if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js").catch(()=>{});
+if(migratedFromV2) $("migrationNotice").style.display="block"; render();
+</script>
+</body></html>
